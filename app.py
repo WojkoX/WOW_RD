@@ -109,8 +109,6 @@ def dashboard(nr=None):
                            statusy=statusy)
 
 
-
-
 @app.route('/save_protokol/<int:nr>', methods=['POST'])
 @login_required
 def save_protokol(nr):
