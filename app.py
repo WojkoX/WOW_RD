@@ -109,47 +109,62 @@ def dashboard(nr=None):
                            statusy=statusy)
 
 
-
 @app.route('/save_protokol/<int:nr>', methods=['POST'])
 @login_required
 def save_protokol(nr):
+    # Sprawdzenie uprawnień
     if not is_admin() and nr != current_user.nr_obwodu:
+        flash('Brak uprawnień do edycji tego obwodu.', 'danger')
         return redirect(url_for('dashboard'))
-    
-    obwod = Obwod.query.filter_by(nr_obwod=nr).first_or_404()
-    p = Protokol.query.filter_by(nr_obwod=nr).first()
-    
-    if not p:
-        p = Protokol()
-        p.nr_obwod = nr
-        p.dzielnica = obwod.dzielnica
-        db.session.add(p)
-    
-    if p.zatw == 1 and not is_admin():
-        flash('Protokół zablokowany do edycji.', 'danger')
-        return redirect(url_for('dashboard', nr=nr))
-    
-    # Pobieranie danych z formularza (k1-k8)
-    p.l_wyborcow = int(request.form.get('k1', 0))
-    p.l_kart_wydanych = int(request.form.get('k2', 0))
-    p.l_kart_wyjetych = int(request.form.get('k3', 0))
-    p.l_kart_niewaznych = int(request.form.get('k4', 0))
-    p.l_kart_waznych = int(request.form.get('k5', 0))
-    p.l_glos_niewaznych = int(request.form.get('k6', 0))
-    p.l_glos_niewaz_zlyx = int(request.form.get('k7a', 0))
-    p.l_glos_niewaz_inne = int(request.form.get('k7b', 0))
-    p.l_glos_waz = int(request.form.get('k8', 0))
-    p.data_edycji = datetime.utcnow()
 
-    # Wyniki kandydatów - usuwamy stare i dodajemy nowe
-    WynikKandydata.query.filter_by(nr_obwod=nr).delete()
-    for key, value in request.form.items():
-        if key.startswith('kandydat_'):
-            k_id = int(key.split('_')[1])
-            db.session.add(WynikKandydata(nr_obwod=nr, id_kandydat=k_id, l_glosow=int(value or 0)))
-    
-    db.session.commit()
-    flash(f'Zapisano obwód {nr}', 'success')
+    # Pobranie istniejącego protokołu lub utworzenie nowego
+    p = Protokol.query.filter_by(nr_obwod=nr).first()
+    if not p:
+        p = Protokol(nr_obwod=nr)
+        # Pobieramy dzielnicę z danych obwodu
+        obwod_info = Obwod.query.filter_by(nr_obwod=nr).first()
+        p.dzielnica = obwod_info.dzielnica if obwod_info else "Nieznana"
+        db.session.add(p)
+
+    # ZABEZPIECZENIE: Nie pozwól zapisać, jeśli protokół jest już zatwierdzony (i użytkownik nie jest adminem)
+    if p.zatw == 1 and not is_admin():
+        flash('Nie można edytować zatwierdzonego protokołu!', 'danger')
+        return redirect(url_for('dashboard', nr=nr))
+
+    # MAPOWANIE: Nazwy z formularza (k1-k8) na nazwy z Twojej klasy Protokol
+    try:
+        p.l_uprawn = int(request.form.get('k1', 0))             # pkt 1
+        p.l_kart_wydan = int(request.form.get('k2', 0))           # pkt 2
+        p.l_kart_wyjet = int(request.form.get('k3', 0))           # pkt 3
+        p.l_kart_wyjet_niewaz = int(request.form.get('k4', 0))    # pkt 4
+        p.l_kart_wyjet_waz = int(request.form.get('k5', 0))       # pkt 5
+        p.l_glos_niewaz = int(request.form.get('k6', 0))          # pkt 6
+        p.l_glos_niewaz_zlyx = int(request.form.get('k7a', 0))    # pkt 7a
+        p.l_glos_niewaz_inne = int(request.form.get('k7b', 0))    # pkt 7b
+        p.l_glos_waz = int(request.form.get('k8', 0))             # pkt 8
+        
+        p.data_edycji = datetime.utcnow()
+
+        # Zapis wyników poszczególnych kandydatów
+        # Usuwamy stare wyniki dla tego obwodu przed zapisem nowych
+        WynikKandydata.query.filter_by(nr_obwod=nr).delete()
+        
+        for key, value in request.form.items():
+            if key.startswith('kandydat_'):
+                try:
+                    k_id = int(key.split('_')[1])
+                    glosy = int(value) if value else 0
+                    nowy_wynik = WynikKandydata(nr_obwod=nr, id_kandydat=k_id, l_glosow=glosy)
+                    db.session.add(nowy_wynik)
+                except (ValueError, IndexError):
+                    continue
+
+        db.session.commit()
+        flash(f'Pomyślnie zapisano dane dla obwodu nr {nr}.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Błąd podczas zapisu: {str(e)}', 'danger')
+
     return redirect(url_for('dashboard', nr=nr))
 
 # Zarządzanie administratorem (Kandydaci/Operatorzy)
