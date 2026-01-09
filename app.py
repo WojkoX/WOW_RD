@@ -186,6 +186,21 @@ def lista_operatorow():
     return render_template('operatorzy.html', operatorzy=ops, 
                            lista_widocznych_obwodow=lista_widocznych_obwodow, statusy=statusy)
 
+
+@app.route('/operatorzy/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_operator(id):
+    if not is_admin():
+        flash('Brak uprawnień', 'danger')
+        return redirect(url_for('lista_operatorow'))
+
+    op = Operator.query.get_or_404(id)
+    db.session.delete(op)
+    db.session.commit()
+
+    flash('Operator usunięty', 'success')
+    return redirect(url_for('lista_operatorow'))
+
 @app.route('/zatwierdz_protokol/<int:nr>', methods=['POST'])
 @login_required
 def zatwierdz_protokol(nr):
