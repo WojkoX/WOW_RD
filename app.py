@@ -208,6 +208,7 @@ def save_operator():
         flash('Brak uprawnień', 'danger')
         return redirect(url_for('lista_operatorow'))
 
+    op_id = request.form.get('id_operator')
     login = request.form.get('login')
     haslo = request.form.get('password')
     nr_obwodu = request.form.get('nr_obwodu')
@@ -217,6 +218,32 @@ def save_operator():
         flash('Login i numer obwodu są wymagane', 'danger')
         return redirect(url_for('lista_operatorow'))
 
+    # --- UPDATE ---
+    if op_id:
+        op = Operator.query.get_or_404(int(op_id))
+
+        # sprawdzamy duplikat loginu, ale Z WYŁĄCZENIEM siebie
+        dup = Operator.query.filter(
+            Operator.login == login,
+            Operator.id_operator != op.id_operator
+        ).first()
+
+        if dup:
+            flash('Inny operator o takim loginie już istnieje', 'danger')
+            return redirect(url_for('lista_operatorow'))
+
+        op.login = login
+        op.nr_obwodu = int(nr_obwodu)
+        op.rola = rola
+
+        if haslo:
+            op.haslo_hash = haslo  # MVP
+
+        db.session.commit()
+        flash('Operator zaktualizowany', 'success')
+        return redirect(url_for('lista_operatorow'))
+
+    # --- CREATE ---
     if Operator.query.filter_by(login=login).first():
         flash('Operator o takim loginie już istnieje', 'danger')
         return redirect(url_for('lista_operatorow'))
@@ -224,18 +251,16 @@ def save_operator():
     op = Operator(
         login=login,
         nr_obwodu=int(nr_obwodu),
-        rola=rola
+        rola=rola,
+        haslo_hash=haslo
     )
 
-    if haslo:
-        op.set_password(haslo)
-    else:
+    if not haslo:
         flash('Hasło jest wymagane przy tworzeniu nowego operatora', 'danger')
         return redirect(url_for('lista_operatorow'))
 
     db.session.add(op)
     db.session.commit()
-
     flash('Operator dodany', 'success')
     return redirect(url_for('lista_operatorow'))
 
