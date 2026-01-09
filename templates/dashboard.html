@@ -39,93 +39,114 @@
                     <div class="card-body p-0">
                         <table class="table table-hover mb-0 align-middle small">
                             <tbody>
-                                <tr class="table-secondary">
-                                    <td class="ps-3 fw-bold w-75">1. Głosowanie trwało bez przerwy</td>
+                                <tr class="">
+                                    <td class="ps-3 ">1. Głosowanie trwało bez przerwy</td>
                                     <td class="pe-3">
                                         <div class="input-group input-group-sm">
-                                            <span class="input-group-text">od</span>
+                                            <span class="input-group-text">od godziny</span>
                                             <input type="text" name="glos_od" class="form-control text-center" value="{{ dane.glos_od if dane else 0 }}">
-                                            <span class="input-group-text">do</span>
-                                            <input type="text" name="glos_do" class="form-control text-center" value="{{ dane.glos_do if dane else 0 }}">
                                         </div>
                                     </td>
                                 </tr>
                                 
-                                
+                                <tr class="">
+                                    <td class="ps-4">Głosowanie trwało bez przerwy</td>
+                                    <td class="pe-3">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">do godziny</span>
+                                            <input type="text" name="glos_do" class="form-control text-center" value="{{ dane.glos_do if dane else 0 }}">
+                                        </div>
+                                    </td>
+                                </tr>
+
+
+     
+
                                 <tr class="">
                                     <td class="ps-3 ">2. Liczba uprawnionych do głosowania</td>
                                     <td class="pe-3">
-                                        <input type="number" name="k2" id="k2" class="form-control form-control-sm text-end " value="{{ dane.l_uprawn if dane else 0 }}">
-                                    </td>
+                                        <input type="number" class="form-control form-control-sm text-end" style="appearance:none; -moz-appearance:textfield;" 
+                                        value="{{ dane.l_uprawn if dane else 0 }}">
+                                     </td>
                                 </tr>
                                 
                                 <tr class="">
                                     <td class="ps-3 ">3. Liczba otrzymanych kart</td>
                                     <td class="pe-3">
-                                        <input type="number" name="k3" id="k3" class="form-control form-control-sm text-end " value="{{ dane.l_kart_otrzym if dane else 0 }}">
+                                        <input type="number" class="form-control form-control-sm text-end" style="appearance:none; -moz-appearance:textfield;" 
+                                         value="{{ dane.l_kart_otrzym if dane else 0 }}">
                                     </td>
                                 </tr>
                                 
                                 <tr class="">
                                     <td class="ps-3 ">4. Liczba kart niewykorzystanych</td>
                                     <td class="pe-3">
-                                        <input type="number" name="k4" id="k4" class="form-control form-control-sm text-end " value="{{ dane.l_kart_niewyk if dane else 0 }}">
+                                        <input type="number" class="form-control form-control-sm text-end" style="appearance:none; -moz-appearance:textfield;"  
+                                        value="{{ dane.l_kart_niewyk if dane else 0 }}">
                                     </td>
                                 </tr>
                                 
                                 <tr class="">
                                     <td class="ps-3 ">5. Liczba wydanych kart (3 - 4)</td>
                                     <td class="pe-3">
-                                        <input type="number" name="k5" id="k5" class="form-control form-control-sm text-end fw-bold" value="{{ dane.l_kart_wydan if dane else 0 }}">
+                                        <input type="number" class="form-control form-control-sm text-end" style="appearance:none; -moz-appearance:textfield;" 
+                                        value="{{ dane.l_kart_wydan if dane else 0 }}">
                                     </td>
                                 </tr>
                                 
                                 <tr class="">
                                     <td class="ps-3 ">6. Liczba kart wyjętych z urny</td>
                                     <td class="pe-3">
-                                        <input type="number" name="k6" id="k6" class="form-control form-control-sm text-end " value="{{ dane.l_kart_wyjet if dane else 0 }}">
+                                        <input type="number" class="form-control form-control-sm text-end" style="appearance:none; -moz-appearance:textfield;" 
+                                        value="{{ dane.l_kart_wyjet if dane else 0 }}">
                                     </td>
                                 </tr>
                                 
                                 <tr class="">
                                     <td class="ps-3 ps-5 text-muted">6a. w tym kart nieważnych</td>
                                     <td class="pe-3">
-                                        <input type="number" name="k6a" id="k6a" class="form-control form-control-sm text-end " value="{{ dane.l_kart_wyjet_niewaz if dane else 0 }}">
+                                        <input type="number" class="form-control form-control-sm text-end" style="appearance:none; -moz-appearance:textfield;" 
+                                        value="{{ dane.l_kart_wyjet_niewaz if dane else 0 }}">
                                     </td>
                                 </tr>
                                 
                                 <tr class="">
                                     <td class="ps-3 ps-5 text-muted">6b. w tym kart ważnych</td>
                                     <td class="pe-3">
-                                        <input type="number" name="k6b" id="k6b" class="form-control form-control-sm text-end " value="{{ dane.l_kart_wyjet_waz if dane else 0 }}">
+                                        <input type="number" class="form-control form-control-sm text-end" style="appearance:none; -moz-appearance:textfield;"  
+                                        value="{{ dane.l_kart_wyjet_waz if dane else 0 }}">
                                     </td>
                                 </tr>
                                 
                                 <tr class="">
                                     <td class="ps-3 ">7. Liczba głosów nieważnych</td>
                                     <td class="pe-3">
-                                        <input type="number" name="k7" id="k7" class="form-control form-control-sm text-end fw-bold" value="{{ dane.l_glos_niewaz if dane else 0 }}">
+                                        <input type="number" class="form-control form-control-sm text-end" style="appearance:none; -moz-appearance:textfield;"  
+                                        value="{{ dane.l_glos_niewaz if dane else 0 }}">
                                     </td>
                                 </tr>
                                 
                                 <tr class="">
                                     <td class="ps-3 ps-5 text-muted">7a. z powodu znaku "X" przy wielu/żadnym</td>
                                     <td class="pe-3">
-                                        <input type="number" name="k7a" id="k7a" class="form-control form-control-sm text-end " value="{{ dane.l_glos_niewaz_zlyx if dane else 0 }}">
+                                        <input type="number" class="form-control form-control-sm text-end" style="appearance:none; -moz-appearance:textfield;" 
+                                         value="{{ dane.l_glos_niewaz_zlyx if dane else 0 }}">
                                     </td>
                                 </tr>
                                 
                                 <tr class="">
                                     <td class="ps-3 ps-5 text-muted">7b. z innych powodów</td>
                                     <td class="pe-3">
-                                        <input type="number" name="k7b" id="k7b" class="form-control form-control-sm text-end " value="{{ dane.l_glos_niewaz_inne if dane else 0 }}">
+                                        <input type="number" class="form-control form-control-sm text-end" style="appearance:none; -moz-appearance:textfield;"  
+                                        value="{{ dane.l_glos_niewaz_inne if dane else 0 }}">
                                     </td>
                                 </tr>
                                 
                                 <tr class="table-primary fw-bold">
                                     <td class="ps-3 ">8. Liczba głosów ważnych (6b - 7)</td>
                                     <td class="pe-3">
-                                        <input type="number" name="k8" id="k8" class="form-control form-control-sm text-end fw-bold" value="{{ dane.l_glos_waz if dane else 0 }}" >
+                                       <input type="number" class="form-control form-control-sm text-end" style="appearance:none; -moz-appearance:textfield;"  
+                                        value="{{ dane.l_glos_waz if dane else 0 }}" >
                                     </td>
                                 </tr>
                                 
