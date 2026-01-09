@@ -81,10 +81,19 @@ def dashboard(nr=None):
     else:
         # Jeśli nie ma w bazie, tworzymy "pusty" obiekt modelu Protokol
         # Dzięki temu {{ dane.l_wyborcow }} w HTML nie wyrzuci błędu, tylko pokaże 0
-        dane_dla_html = Protokol(
-            nr_obwod=nr, l_wyborcow=0, l_kart_wydanych=0, l_kart_wyjetych=0,
-            l_kart_niewaznych=0, l_kart_waznych=0, l_glos_niewaznych=0,
-            l_glos_niewaz_zlyx=0, l_glos_niewaz_inne=0, l_glos_waz=0, zatw=0
+        else:
+        # Jeśli nie ma w bazie, tworzymy obiekt z poprawnymi nazwami pól
+        dane_final = Protokol(
+            nr_obwod=nr, 
+            l_uprawn=0,             # Poprawione z l_wyborcow
+            l_kart_wydan=0,         # Poprawione z l_kart_wydanych
+            l_kart_wyjet=0,         # Poprawione z l_kart_wyjetych
+            l_glos_niewaz=0,        # Poprawione z l_glos_niewaznych
+            l_kart_wyjet_waz=0,     # Poprawione z l_kart_waznych
+            l_glos_niewaz_zlyx=0, 
+            l_glos_niewaz_inne=0, 
+            l_glos_waz=0, 
+            zatw=0
         )
         wyniki = {}
 
