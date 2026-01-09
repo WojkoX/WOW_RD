@@ -209,7 +209,7 @@ def save_operator():
         return redirect(url_for('lista_operatorow'))
 
     login = request.form.get('login')
-    haslo = request.form.get('haslo')
+    haslo = request.form.get('password')
     nr_obwodu = request.form.get('nr_obwodu')
     rola = request.form.get('rola', 'OPERATOR')
 
