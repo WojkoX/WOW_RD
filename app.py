@@ -78,10 +78,10 @@ def dashboard(nr=None):
         dane_dla_html = protokol_db
         # Pobieranie wyników kandydatów do słownika
         wyniki = {w.id_kandydat: w.l_glosow for w in WynikKandydata.query.filter_by(nr_obwod=nr).all()}
-    else:
+    
         # Jeśli nie ma w bazie, tworzymy "pusty" obiekt modelu Protokol
         # Dzięki temu {{ dane.l_wyborcow }} w HTML nie wyrzuci błędu, tylko pokaże 0
-        else:
+    else:
         # Jeśli nie ma w bazie, tworzymy obiekt z poprawnymi nazwami pól
         dane_final = Protokol(
             nr_obwod=nr, 
