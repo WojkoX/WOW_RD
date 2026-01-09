@@ -75,15 +75,13 @@ def dashboard(nr=None):
     protokol_db = Protokol.query.filter_by(nr_obwod=nr).first()
     
     if protokol_db:
-        dane_dla_html = protokol_db
+        dane_protokolu = protokol_db
         # Pobieranie wyników kandydatów do słownika
         wyniki = {w.id_kandydat: w.l_glosow for w in WynikKandydata.query.filter_by(nr_obwod=nr).all()}
-    
-        # Jeśli nie ma w bazie, tworzymy "pusty" obiekt modelu Protokol
-        # Dzięki temu {{ dane.l_wyborcow }} w HTML nie wyrzuci błędu, tylko pokaże 0
+          
     else:
         # Jeśli nie ma w bazie, tworzymy obiekt z poprawnymi nazwami pól
-        dane_final = Protokol(
+        dane_protokolu = Protokol(
             nr_obwod=nr, 
             l_uprawn=0,             # Poprawione z l_wyborcow
             l_kart_wydan=0,         # Poprawione z l_kart_wydanych
@@ -101,7 +99,7 @@ def dashboard(nr=None):
 
     return render_template('dashboard.html',
                            obwod=obwod,
-                           dane=dane_dla_html, # Ta nazwa MUSI być 'dane'
+                           dane=dane_protokolu, # dane protokolu
                            kandydaci=kandydaci,
                            wyniki=wyniki,
                            lista_widocznych_obwodow=lista_widocznych_obwodow,
