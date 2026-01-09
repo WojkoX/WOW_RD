@@ -211,21 +211,27 @@ def save_operator():
     login = request.form.get('login')
     haslo = request.form.get('haslo')
     nr_obwodu = request.form.get('nr_obwodu')
+    rola = request.form.get('rola', 'OPERATOR')
 
-    if not login or not haslo or not nr_obwodu:
-        flash('Wszystkie pola są wymagane', 'danger')
+    if not login or not nr_obwodu:
+        flash('Login i numer obwodu są wymagane', 'danger')
         return redirect(url_for('lista_operatorow'))
 
-    # opcjonalnie: sprawdzenie duplikatu
     if Operator.query.filter_by(login=login).first():
         flash('Operator o takim loginie już istnieje', 'danger')
         return redirect(url_for('lista_operatorow'))
 
     op = Operator(
         login=login,
-        nr_obwodu=int(nr_obwodu)
+        nr_obwodu=int(nr_obwodu),
+        rola=rola
     )
-    op.set_password(haslo)  # zakładam, że masz metodę
+
+    if haslo:
+        op.set_password(haslo)
+    else:
+        flash('Hasło jest wymagane przy tworzeniu nowego operatora', 'danger')
+        return redirect(url_for('lista_operatorow'))
 
     db.session.add(op)
     db.session.commit()
