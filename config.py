@@ -15,5 +15,5 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = 'uploads'
     APP_NAME = "WOW_RD Zabrze"
-    VERSION = "4.2"
+    VERSION = "0.1"
     OKW_COUNT = 39
