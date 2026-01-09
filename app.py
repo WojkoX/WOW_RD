@@ -51,7 +51,7 @@ def logout():
 @app.route('/dashboard/<int:nr>')
 @login_required
 def dashboard(nr=None):
-    # 1. Pobieranie danych do menu bocznego
+    # Logika uprawnień i menu bocznego
     if is_admin():
         obwody_all = Obwod.query.order_by(Obwod.nr_obwod).all()
     else:
@@ -60,56 +60,47 @@ def dashboard(nr=None):
     lista_widocznych_obwodow = [o.nr_obwod for o in obwody_all]
     statusy = {p.nr_obwod: ('zatw' if p.zatw == 1 else 'edit') for p in Protokol.query.all()}
 
-    # 2. Jeśli nie wybrano obwodu, pokaż stronę powitalną
     if nr is None:
         return render_template('dashboard_empty.html', 
-                               lista_widocznych_obwodow=lista_widocznych_obwodow,
+                               lista_widocznych_obwodow=lista_widocznych_obwodow, 
                                statusy=statusy)
 
-    # 3. Sprawdzenie uprawnień
     if not is_admin() and nr != current_user.nr_obwodu:
         flash('Brak uprawnień do tego obwodu.', 'danger')
         return redirect(url_for('dashboard'))
 
-    # 4. Pobieranie obwodu
     obwod = Obwod.query.filter_by(nr_obwod=nr).first_or_404()
     
-    # 5. Próba pobrania protokołu z bazy danych
+    # KLUCZOWE: Pobieranie protokołu
     protokol_db = Protokol.query.filter_by(nr_obwod=nr).first()
     
     if protokol_db:
-        # DANE ISTNIEJĄ (np. dla nr 1)
-        dane_final = protokol_db
+        dane_dla_html = protokol_db
+        # Pobieranie wyników kandydatów do słownika
         wyniki = {w.id_kandydat: w.l_glosow for w in WynikKandydata.query.filter_by(nr_obwod=nr).all()}
     else:
-        # DANE NIE ISTNIEJĄ (np. dla nr 2)
-        # Tworzymy tymczasowy, "pusty" obiekt modelu Protokol, aby HTML miał co czytać
-        # Ustawiamy jawnie zera, żeby pola nie były puste
-        dane_final = Protokol()
-        dane_final.nr_obwod = nr
-        dane_final.l_wyborcow = 0
-        dane_final.l_kart_wydanych = 0
-        dane_final.l_kart_wyjetych = 0
-        dane_final.l_kart_niewaznych = 0
-        dane_final.l_kart_waznych = 0
-        dane_final.l_glos_niewaznych = 0
-        dane_final.l_glos_niewaz_zlyx = 0
-        dane_final.l_glos_niewaz_inne = 0
-        dane_final.l_glos_waz = 0
-        dane_final.zatw = 0
+        # Jeśli nie ma w bazie, tworzymy "pusty" obiekt modelu Protokol
+        # Dzięki temu {{ dane.l_wyborcow }} w HTML nie wyrzuci błędu, tylko pokaże 0
+        dane_dla_html = Protokol(
+            nr_obwod=nr, l_wyborcow=0, l_kart_wydanych=0, l_kart_wyjetych=0,
+            l_kart_niewaznych=0, l_kart_waznych=0, l_glos_niewaznych=0,
+            l_glos_niewaz_zlyx=0, l_glos_niewaz_inne=0, l_glos_waz=0, zatw=0
+        )
         wyniki = {}
 
     kandydaci = Kandydat.query.filter_by(dzielnica=obwod.dzielnica).order_by(Kandydat.lp).all()
 
-    # 6. Przekazujemy wszystko do HTML - zmienna MUSI nazywać się 'dane'
     return render_template('dashboard.html',
                            obwod=obwod,
-                           dane=dane_final,
+                           dane=dane_dla_html, # Ta nazwa MUSI być 'dane'
                            kandydaci=kandydaci,
                            wyniki=wyniki,
                            lista_widocznych_obwodow=lista_widocznych_obwodow,
                            wybrano_nr=nr,
                            statusy=statusy)
+
+
+
 @app.route('/save_protokol/<int:nr>', methods=['POST'])
 @login_required
 def save_protokol(nr):
