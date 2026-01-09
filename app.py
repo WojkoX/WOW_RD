@@ -162,7 +162,7 @@ def save_protokol(nr):
 
     return redirect(url_for('dashboard', nr=nr))
 
-# Zarządzanie administratorem (Kandydaci/Operatorzy)
+
 @app.route('/kandydaci')
 @login_required
 def lista_kandydatow():
@@ -175,6 +175,7 @@ def lista_kandydatow():
     return render_template('kandydaci.html', kandydaci=kandydaci, dzielnice=dzielnice, 
                            lista_widocznych_obwodow=lista_widocznych_obwodow, statusy=statusy)
 
+# Zarządzanie administratorem (Kandydaci/Operatorzy)
 @app.route('/operatorzy')
 @login_required
 def lista_operatorow():
