@@ -175,6 +175,36 @@ def lista_kandydatow():
     return render_template('kandydaci.html', kandydaci=kandydaci, dzielnice=dzielnice, 
                            lista_widocznych_obwodow=lista_widocznych_obwodow, statusy=statusy)
 
+
+@app.route('/kandydaci/renumeruj', methods=['POST'])
+@login_required
+def kandydaci_renumeruj():
+    if not is_admin():
+        flash('Brak uprawnień', 'danger')
+        return redirect(url_for('lista_kandydatow'))
+
+    # lista dzielnic
+    dzielnice = db.session.query(Kandydat.dzielnica).distinct().all()
+
+    for (dzielnica,) in dzielnice:
+        # kandydaci w dzielnicy posortowani alfabetycznie
+        kandydaci = (
+            Kandydat.query
+            .filter_by(dzielnica=dzielnica)
+            .order_by(Kandydat.nazwisko, Kandydat.imie)
+            .all()
+        )
+
+        # renumeracja LP = 1..N
+        for lp, k in enumerate(kandydaci, start=1):
+            k.lp = lp
+
+    db.session.commit()
+    flash('Kandydaci zostali ponumerowani alfabetycznie w każdej dzielnicy', 'success')
+    return redirect(url_for('lista_kandydatow'))
+
+
+
 # Zarządzanie administratorem (Kandydaci/Operatorzy)
 @app.route('/operatorzy')
 @login_required
