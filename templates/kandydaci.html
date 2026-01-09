@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-people me-2"></i>Zarządzanie Kandydatami</h5>
+            <div class="d-flex gap-2">
+                <select id="filter-dzielnica" class="form-select form-select-sm" style="width: 250px;" onchange="filterTable()">
+                    <option value="">Wszystkie Dzielnice</option>
+                    {% for d in dzielnice %}
+                    <option value="{{ d }}">{{ d }}</option>
+                    {% endfor %}
+                </select>
+                <form action="{{ url_for('kandydaci_renumeruj') }}" method="POST" onsubmit="return confirm('Czy przeliczyć LP dla wszystkich dzielnic?')">
+                    <button type="submit" class="btn btn-warning btn-sm fw-bold">
+                        <i class="bi bi-sort-numeric-down me-1"></i> Auto-Renumeruj
+                    </button>
+                </form>
+                <button class="btn btn-success btn-sm fw-bold" onclick="showAddModal()">
+                    <i class="bi bi-plus-lg me-1"></i> Dodaj Kandydata
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0" id="table-kandydaci">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">DZIELNICA</th>
+                        <th style="width: 80px;">LP</th>
+                        <th>NAZWISKO</th>
+                        <th>IMIĘ</th>
+                        <th class="text-end pe-4">AKCJE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for k in kandydaci %}
+                    <tr class="kandydat-row" data-dzielnica="{{ k.dzielnica }}">
+                        <td class="ps-4 fw-bold text-muted">{{ k.dzielnica }}</td>
+                        <td><span class="badge bg-primary px-3">{{ k.lp }}</span></td>
+                        <td class="fw-bold">{{ k.nazwisko }}</td>
+                        <td>{{ k.imie }}</td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-outline-secondary me-1" 
+                                    onclick="showEditModal('{{ k.id_kandydat }}', '{{ k.dzielnica }}', '{{ k.lp }}', '{{ k.imie }}', '{{ k.nazwisko }}')">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <form action="{{ url_for('kandydaci_delete', id=k.id_kandydat) }}" method="POST" class="d-inline" onsubmit="return confirm('Usunąć kandydata?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="kandydatModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('kandydaci_save') }}" method="POST">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold" id="mTitle">Dodaj Kandydata</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="id_kandydat" id="mId">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Dzielnica</label>
+                        <select class="form-select" name="dzielnica" id="mDzielnica" required>
+                            {% for d in dzielnice %}
+                            <option value="{{ d }}">{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-8">
+                            <label class="form-label small fw-bold">Nazwisko</label>
+                            <input type="text" class="form-control" name="nazwisko" id="mNazwisko" required>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small fw-bold">LP</label>
+                            <input type="number" class="form-control" name="lp" id="mLp" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Imię</label>
+                        <input type="text" class="form-control" name="imie" id="mImie" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Anuluj</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4">Zapisz Dane</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterTable() {
+    let val = document.getElementById('filter-dzielnica').value;
+    document.querySelectorAll('.kandydat-row').forEach(row => {
+        row.style.display = (val === "" || row.dataset.dzielnica === val) ? "" : "none";
+    });
+}
+
+function showAddModal() {
+    document.getElementById('mId').value = "";
+    document.getElementById('mTitle').innerText = "Dodaj Nowego Kandydata";
+    document.getElementById('mImie').value = "";
+    document.getElementById('mNazwisko').value = "";
+    document.getElementById('mLp').value = "";
+    new bootstrap.Modal(document.getElementById('kandydatModal')).show();
+}
+
+function showEditModal(id, dz, lp, im, na) {
+    document.getElementById('mId').value = id;
+    document.getElementById('mTitle').innerText = "Edycja Kandydata";
+    document.getElementById('mDzielnica').value = dz;
+    document.getElementById('mLp').value = lp;
+    document.getElementById('mImie').value = im;
+    document.getElementById('mNazwisko').value = na;
+    new bootstrap.Modal(document.getElementById('kandydatModal')).show();
+}
+</script>
+{% endblock %}
