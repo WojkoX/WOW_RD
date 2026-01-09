@@ -203,6 +203,87 @@ def kandydaci_renumeruj():
     flash('Kandydaci zostali ponumerowani alfabetycznie w każdej dzielnicy', 'success')
     return redirect(url_for('lista_kandydatow'))
 
+@app.route('/kandydaci/save', methods=['POST'])
+@login_required
+def kandydaci_save():
+    if not is_admin():
+        flash('Brak uprawnień', 'danger')
+        return redirect(url_for('lista_kandydatow'))
+
+    # --- dane z formularza ---
+    k_id = request.form.get('id_kandydat')
+    imie = request.form.get('imie')
+    nazwisko = request.form.get('nazwisko')
+    dzielnica = request.form.get('dzielnica')
+    lp_form = request.form.get('lp')
+
+    if not imie or not nazwisko or not dzielnica:
+        flash('Imię, nazwisko i dzielnica są wymagane', 'danger')
+        return redirect(url_for('lista_kandydatow'))
+
+    # LP: z formularza albo None
+    lp = int(lp_form) if lp_form and lp_form.isdigit() else None
+
+    # =========================
+    # UPDATE
+    # =========================
+    if k_id:
+        k = Kandydat.query.get_or_404(int(k_id))
+
+        # sprawdzenie duplikatu (ten sam kandydat w tej samej dzielnicy)
+        dup = Kandydat.query.filter(
+            Kandydat.dzielnica == dzielnica,
+            Kandydat.imie == imie,
+            Kandydat.nazwisko == nazwisko,
+            Kandydat.id_kandydat != k.id_kandydat
+        ).first()
+
+        if dup:
+            flash('Taki kandydat już istnieje w tej dzielnicy', 'danger')
+            return redirect(url_for('lista_kandydatow'))
+
+        k.imie = imie
+        k.nazwisko = nazwisko
+        k.dzielnica = dzielnica
+
+        if lp is not None:
+            k.lp = lp
+
+        db.session.commit()
+        flash('Dane kandydata zaktualizowane', 'success')
+        return redirect(url_for('lista_kandydatow'))
+
+    # =========================
+    # CREATE
+    # =========================
+    if Kandydat.query.filter_by(
+        imie=imie,
+        nazwisko=nazwisko,
+        dzielnica=dzielnica
+    ).first():
+        flash('Taki kandydat już istnieje w tej dzielnicy', 'danger')
+        return redirect(url_for('lista_kandydatow'))
+
+    # jeśli LP nie podane → max + 1 w dzielnicy
+    if lp is None:
+        max_lp = (
+            db.session.query(func.max(Kandydat.lp))
+            .filter_by(dzielnica=dzielnica)
+            .scalar()
+        )
+        lp = (max_lp or 0) + 1
+
+    k = Kandydat(
+        imie=imie,
+        nazwisko=nazwisko,
+        dzielnica=dzielnica,
+        lp=lp
+    )
+
+    db.session.add(k)
+    db.session.commit()
+    flash('Kandydat dodany', 'success')
+    return redirect(url_for('lista_kandydatow'))
 
 
 # Zarządzanie administratorem (Kandydaci/Operatorzy)
