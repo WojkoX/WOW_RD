@@ -117,20 +117,21 @@ def save_protokol(nr):
         return redirect(url_for('dashboard'))
 
     p = Protokol.query.filter_by(nr_obwod=nr).first()
+    
     if not p:
-        p = Protokol(nr_obwod=nr)
+        # Tworzymy nowy rekord jeśli nie istnieje
         obwod_info = Obwod.query.filter_by(nr_obwod=nr).first()
+        p = Protokol(nr_obwod=nr)
         p.dzielnica = obwod_info.dzielnica if obwod_info else "Nieznana"
         db.session.add(p)
-    # Pamiętaj, że ten blok IF kończy się tutaj - 'else' poniżej byłoby błędem, 
-    # jeśli chcesz po prostu kontynuować przypisywanie danych.
-
+    
+    # Jeśli protokół jest zatwierdzony, tylko admin może go edytować
     if p.zatw == 1 and not is_admin():
-        flash('Nie można edytować zatwierdzonego protokołu!', 'danger')
+        flash('Protokół jest zatwierdzony i zablokowany do edycji.', 'danger')
         return redirect(url_for('dashboard', nr=nr))
 
     try:
-        # MAPOWANIE NA TWOJE NAZWY Z KLASY PROTOKOL
+        # MAPOWANIE NA TWOJE NAZWY Z KLASY PROTOKOL (models.py)
         p.l_uprawn = int(request.form.get('k1', 0))
         p.l_kart_wydan = int(request.form.get('k2', 0))
         p.l_kart_wyjet = int(request.form.get('k3', 0))
@@ -143,22 +144,23 @@ def save_protokol(nr):
         
         p.data_edycji = datetime.utcnow()
 
-        # Wyniki kandydatów
+        # Zapis głosów na kandydatów
         WynikKandydata.query.filter_by(nr_obwod=nr).delete()
         for key, value in request.form.items():
             if key.startswith('kandydat_'):
                 try:
                     k_id = int(key.split('_')[1])
                     glosy = int(value) if value else 0
-                    db.session.add(WynikKandydata(nr_obwod=nr, id_kandydat=k_id, l_glosow=glosy))
-                except (ValueError, IndexError):
+                    nowy_wynik = WynikKandydata(nr_obwod=nr, id_kandydat=k_id, l_glosow=glosy)
+                    db.session.add(nowy_wynik)
+                except:
                     continue
 
         db.session.commit()
-        flash(f'Pomyślnie zapisano dane dla obwodu nr {nr}.', 'success')
+        flash(f'Zapisano dane obwodu nr {nr}', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'Błąd podczas zapisu: {str(e)}', 'danger')
+        flash(f'Błąd zapisu: {str(e)}', 'danger')
 
     return redirect(url_for('dashboard', nr=nr))
 
