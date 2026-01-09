@@ -286,6 +286,23 @@ def kandydaci_save():
     return redirect(url_for('lista_kandydatow'))
 
 
+@app.route('/kandydaci/delete/<int:id>', methods=['POST'])
+@login_required
+def kandydaci_delete(id):
+    if not is_admin():
+        flash('Brak uprawnień', 'danger')
+        return redirect(url_for('lista_kandydatow'))
+
+    k = Kandydat.query.get_or_404(id)
+
+    db.session.delete(k)
+    db.session.commit()
+
+    flash('Kandydat usunięty', 'success')
+    return redirect(url_for('lista_kandydatow'))
+
+
+
 # Zarządzanie administratorem (Kandydaci/Operatorzy)
 @app.route('/operatorzy')
 @login_required
