@@ -201,6 +201,39 @@ def delete_operator(id):
     flash('Operator usunięty', 'success')
     return redirect(url_for('lista_operatorow'))
 
+@app.route('/operatorzy/save', methods=['POST'])
+@login_required
+def save_operator():
+    if not is_admin():
+        flash('Brak uprawnień', 'danger')
+        return redirect(url_for('lista_operatorow'))
+
+    login = request.form.get('login')
+    haslo = request.form.get('haslo')
+    nr_obwodu = request.form.get('nr_obwodu')
+
+    if not login or not haslo or not nr_obwodu:
+        flash('Wszystkie pola są wymagane', 'danger')
+        return redirect(url_for('lista_operatorow'))
+
+    # opcjonalnie: sprawdzenie duplikatu
+    if Operator.query.filter_by(login=login).first():
+        flash('Operator o takim loginie już istnieje', 'danger')
+        return redirect(url_for('lista_operatorow'))
+
+    op = Operator(
+        login=login,
+        nr_obwodu=int(nr_obwodu)
+    )
+    op.set_password(haslo)  # zakładam, że masz metodę
+
+    db.session.add(op)
+    db.session.commit()
+
+    flash('Operator dodany', 'success')
+    return redirect(url_for('lista_operatorow'))
+
+
 @app.route('/zatwierdz_protokol/<int:nr>', methods=['POST'])
 @login_required
 def zatwierdz_protokol(nr):
