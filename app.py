@@ -1,10 +1,15 @@
 import os
+import csv
+import io
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
 from models import db, Operator, Obwod, Kandydat, Protokol, WynikKandydata, Dzielnica
-from sqlalchemy import func
+from sqlalchemy import func,text
+
+
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -337,6 +342,73 @@ def kandydaci_delete(id):
     flash('Kandydat usunięty', 'success')
     return redirect(url_for('lista_kandydatow'))
 
+@app.route('/kandydaci/import_csv', methods=['POST'])
+@login_required
+def kandydaci_import_csv():
+    if not is_admin(): return redirect(url_for('index'))
+    
+    file = request.files.get('csv_file')
+    if not file or not file.filename.endswith('.csv'):
+        flash('Błędny plik CSV', 'danger')
+        return redirect(url_for('lista_kandydatow'))
+
+    try:
+        # Używamy utf-8-sig, aby automatycznie usunąć znak BOM z Excela
+        stream = io.StringIO(file.stream.read().decode("utf-8-sig"), newline=None)
+        # Używamy średnika jako separatora (zgodnie z Twoim uploadem)
+        reader = csv.DictReader(stream, delimiter=';')
+        
+        kandydaci_do_dodania = []
+        pierwsza_dzielnica = None
+
+        for row in reader:
+            # Czyszczenie danych ze spacji i ujednolicenie wielkości liter do porównania
+            obecna_dzielnica = row['DZIELNICA'].strip()
+            
+            if pierwsza_dzielnica is None:
+                pierwsza_dzielnica = obecna_dzielnica
+            
+            # Porównanie ignorujące wielkość liter i spacje
+            if obecna_dzielnica.lower() != pierwsza_dzielnica.lower():
+                flash(f"Błąd: Plik zawiera mieszane dzielnice ({pierwsza_dzielnica} i {obecna_dzielnica})", 'danger')
+                return redirect(url_for('lista_kandydatow'))
+
+            kandydaci_do_dodania.append({
+                'imie': row['IMIE'].strip(),
+                'nazwisko': row['NAZWISKO'].strip(),
+                'dzielnica': obecna_dzielnica
+            })
+
+        if not kandydaci_do_dodania:
+            flash('Plik jest pusty lub ma błędny format', 'warning')
+            return redirect(url_for('lista_kandydatow'))
+
+        # Sprawdzenie czy dzielnica istnieje w bazie (Dla bezpieczeństwa)
+        dz_exists = Dzielnica.query.filter_by(nazwa=pierwsza_dzielnica).first()
+        if not dz_exists:
+            flash(f"Dzielnica '{pierwsza_dzielnica}' nie istnieje w systemie!", 'danger')
+            return redirect(url_for('lista_kandydatow'))
+
+        # Wyznaczenie następnego LP dla tej dzielnicy
+        max_lp = db.session.query(func.max(Kandydat.lp)).filter_by(dzielnica=pierwsza_dzielnica).scalar() or 0
+        
+        for i, k_data in enumerate(kandydaci_do_dodania, start=1):
+            nowy = Kandydat(
+                imie=k_data['imie'],
+                nazwisko=k_data['nazwisko'],
+                dzielnica=k_data['dzielnica'],
+                lp=max_lp + i
+            )
+            db.session.add(nowy)
+            
+        db.session.commit()
+        flash(f'Zaimportowano {len(kandydaci_do_dodania)} kandydatów do dzielnicy {pierwsza_dzielnica}', 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Błąd importu CSV: {str(e)}', 'danger')
+
+    return redirect(url_for('lista_kandydatow'))
 
 
 # Zarządzanie administratorem (Kandydaci/Operatorzy)

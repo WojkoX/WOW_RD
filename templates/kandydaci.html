@@ -20,6 +20,13 @@
                 <button class="btn btn-success btn-sm fw-bold" onclick="showAddModal()">
                     <i class="bi bi-plus-lg me-1"></i> Dodaj Kandydata
                 </button>
+                
+                {# PRZYCISK IMPORTU CSV #}
+                {% if current_user.rola.upper() == 'ADMIN' %}
+                <button class="btn btn-primary btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#importCsvModal">
+                    <i class="bi bi-file-earmark-arrow-up me-1"></i> Importuj CSV
+                </button>
+                {% endif %}
             </div>
         </div>
         <div class="card-body p-0">
@@ -45,6 +52,7 @@
                                     onclick="showEditModal('{{ k.id_kandydat }}', '{{ k.dzielnica }}', '{{ k.lp }}', '{{ k.imie }}', '{{ k.nazwisko }}')">
                                 <i class="bi bi-pencil-square"></i>
                             </button>
+                            {# POPRAWIONY ENDPOINT: kandydaci_delete #}
                             <form action="{{ url_for('kandydaci_delete', id=k.id_kandydat) }}" method="POST" class="d-inline" onsubmit="return confirm('Usunąć kandydata?')">
                                 <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                             </form>
@@ -60,6 +68,7 @@
 <div class="modal fade" id="kandydatModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow">
+            {# POPRAWIONY ENDPOINT: kandydaci_save #}
             <form action="{{ url_for('kandydaci_save') }}" method="POST">
                 <div class="modal-header bg-dark text-white">
                     <h5 class="modal-title fw-bold" id="mTitle">Dodaj Kandydata</h5>
@@ -98,6 +107,43 @@
         </div>
     </div>
 </div>
+
+{% if current_user.rola.upper() == 'ADMIN' %}
+<div class="modal fade" id="importCsvModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-filetype-csv me-2"></i>Import kandydatów z CSV</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info small">
+                    <ul class="mb-0">
+                        <li>Plik CSV może zawierać <b>kandydatów tylko z jednej dzielnicy</b></li>
+                        <li>Plik musi być kodowany w UTF-8</li>
+                        <li>Dzielnica musi istnieć w słowniku dzielnic i być zgodna literalnie</li>
+                        <li>Format: <code>DZIELNICA;IMIE;NAZWISKO</code></li>
+                    </ul>
+                </div>
+
+                <form action="{{ url_for('kandydaci_import_csv') }}"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      onsubmit="return confirm('Czy na pewno zaimportować kandydatów z pliku CSV?');">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Wybierz plik CSV</label>
+                        <div class="input-group">
+                            <input type="file" name="csv_file" class="form-control" accept=".csv" required>
+                            <button class="btn btn-primary" type="submit">Importuj CSV</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <script>
 function filterTable() {
