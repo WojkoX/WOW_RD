@@ -51,60 +51,75 @@ def logout():
 @app.route('/dashboard/<int:nr>')
 @login_required
 def dashboard(nr=None):
-    # Logika uprawnień i menu bocznego
+    # ===== MENU / UPRAWNIENIA =====
     if is_admin():
         obwody_all = Obwod.query.order_by(Obwod.nr_obwod).all()
     else:
         obwody_all = Obwod.query.filter_by(nr_obwod=current_user.nr_obwodu).all()
-    
+
     lista_widocznych_obwodow = [o.nr_obwod for o in obwody_all]
     statusy = {p.nr_obwod: ('zatw' if p.zatw == 1 else 'edit') for p in Protokol.query.all()}
 
+    # ===== WIDOK PUSTY =====
     if nr is None:
-        return render_template('dashboard_empty.html', 
-                               lista_widocznych_obwodow=lista_widocznych_obwodow, 
-                               statusy=statusy)
+        return render_template(
+            'dashboard_empty.html',
+            lista_widocznych_obwodow=lista_widocznych_obwodow,
+            statusy=statusy
+        )
 
+    # ===== AUTORYZACJA =====
     if not is_admin() and nr != current_user.nr_obwodu:
         flash('Brak uprawnień do tego obwodu.', 'danger')
         return redirect(url_for('dashboard'))
 
+    # ===== OBWÓD =====
     obwod = Obwod.query.filter_by(nr_obwod=nr).first_or_404()
-    
-    # KLUCZOWE: Pobieranie protokołu
+
+    # ===== PROTOKÓŁ =====
     protokol_db = Protokol.query.filter_by(nr_obwod=nr).first()
-    
+
     if protokol_db:
         dane_protokolu = protokol_db
-        # Pobieranie wyników kandydatów do słownika
-        wyniki = {w.id_kandydat: w.l_glosow for w in WynikKandydata.query.filter_by(nr_obwod=nr).all()}
-          
+        glosy_dict = {
+            w.id_kandydat: w.l_glosow
+            for w in WynikKandydata.query.filter_by(nr_obwod=nr).all()
+        }
     else:
-        # Jeśli nie ma w bazie, tworzymy obiekt z poprawnymi nazwami pól
         dane_protokolu = Protokol(
-            nr_obwod=nr, 
-            l_uprawn=0,             # Poprawione z l_wyborcow
-            l_kart_wydan=0,         # Poprawione z l_kart_wydanych
-            l_kart_wyjet=0,         # Poprawione z l_kart_wyjetych
-            l_glos_niewaz=0,        # Poprawione z l_glos_niewaznych
-            l_kart_wyjet_waz=0,     # Poprawione z l_kart_waznych
-            l_glos_niewaz_zlyx=0, 
-            l_glos_niewaz_inne=0, 
-            l_glos_waz=0, 
+            nr_obwod=nr,
+            l_uprawn=0,
+            l_kart_wydan=0,
+            l_kart_wyjet=0,
+            l_kart_wyjet_niewaz=0,
+            l_kart_wyjet_waz=0,
+            l_glos_niewaz=0,
+            l_glos_niewaz_zlyx=0,
+            l_glos_niewaz_inne=0,
+            l_glos_waz=0,
             zatw=0
         )
-        wyniki = {}
+        glosy_dict = {}
 
-    kandydaci = Kandydat.query.filter_by(dzielnica=obwod.dzielnica).order_by(Kandydat.lp).all()
+    # ===== KANDYDACI (KOLEJNOŚĆ DZIELNICOWA) =====
+    kandydaci = (
+        Kandydat.query
+        .filter_by(dzielnica=obwod.dzielnica)
+        .order_by(Kandydat.lp)
+        .all()
+    )
 
-    return render_template('dashboard.html',
-                           obwod=obwod,
-                           dane=dane_protokolu, # dane protokolu
-                           kandydaci=kandydaci,
-                           wyniki=wyniki,
-                           lista_widocznych_obwodow=lista_widocznych_obwodow,
-                           wybrano_nr=nr,
-                           statusy=statusy)
+    # ===== RENDER =====
+    return render_template(
+        'dashboard.html',
+        obwod=obwod,
+        dane=dane_protokolu,
+        kandydaci=kandydaci,
+        glosy_dict=glosy_dict,
+        lista_widocznych_obwodow=lista_widocznych_obwodow,
+        wybrano_nr=nr,
+        statusy=statusy
+    )
 
 
 @app.route('/save_protokol/<int:nr>', methods=['POST'])
@@ -160,6 +175,27 @@ def save_protokol(nr):
         db.session.rollback()
         flash(f'Błąd zapisu: {str(e)}', 'danger')
 
+    return redirect(url_for('dashboard', nr=nr))
+
+
+
+@app.route('/protokol/odzatwierdz/<int:nr>', methods=['POST'])
+@login_required
+def protokol_odzatwierdz(nr):
+    if not is_admin():
+        flash('Brak uprawnień', 'danger')
+        return redirect(url_for('dashboard', nr=nr))
+
+    p = Protokol.query.filter_by(nr_obwod=nr).first_or_404()
+
+    if p.zatw != 1:
+        flash('Protokół nie jest zatwierdzony', 'warning')
+        return redirect(url_for('dashboard', nr=nr))
+
+    p.zatw = 0
+    db.session.commit()
+
+    flash('Zatwierdzenie protokołu zostało cofnięte', 'success')
     return redirect(url_for('dashboard', nr=nr))
 
 
