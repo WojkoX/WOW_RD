@@ -83,46 +83,48 @@
                             <tbody>
 
                                 <tr>
-                                    <td class="ps-3">1. Głosowanie trwało bez przerwy</td>
+                                    <td class="ps-3">1. Głosowanie rozpoczęło się o godz.</td>
                                     <td class="pe-3">
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text">od godziny</span>
-                                            <input type="text" name="glos_od"
-                                                   class="form-control text-center"
-                                                   value="{{ dane.glos_od if dane else '' }}">
+                                            <input type="time" name="glos_od"
+                                                   class="form-control text-center no-spinner"
+                                                   value="{{ dane.glos_od if dane else '' }}"
+                                                   {{ 'readonly' if is_blocked }}>
                                         </div>
                                     </td>
                                 </tr>
 
                                 <tr>
-                                    <td class="ps-4">Głosowanie trwało bez przerwy</td>
+                                    <td class="ps-4"> trwało bez przerwy do godz.</td>
                                     <td class="pe-3">
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text">do godziny</span>
-                                            <input type="text" name="glos_do"
-                                                   class="form-control text-center"
-                                                   value="{{ dane.glos_do if dane else '' }}">
+                                            <input type="time" name="glos_do"
+                                                   class="form-control text-center no-spinner"
+                                                   value="{{ dane.glos_do if dane else '' }}"
+                                                   {{ 'readonly' if is_blocked }}>
                                         </div>
                                     </td>
                                 </tr>
 
                                 <tr>
-                                    <td class="ps-3">2. Liczba uprawnionych do głosowania</td>
+                                    <td class="ps-3">2. Liczba osób uprawnionych do głosowania</td>
                                     <td class="pe-3">
                                         <input type="number"
-                                               name="k1"
-                                               class="form-control form-control-sm text-end"
+                                               name="l_uprawn"
+                                               class="form-control form-control-sm text-end no-spinner"
                                                value="{{ dane.l_uprawn if dane else 0 }}"
                                                {{ 'readonly' if is_blocked }}>
                                     </td>
                                 </tr>
 
                                 <tr>
-                                    <td class="ps-3">3. Liczba otrzymanych kart</td>
+                                    <td class="ps-3">3. Liczba otrzymanych kart do głosowania</td>
                                     <td class="pe-3">
                                         <input type="number"
-                                               name="k2"
-                                               class="form-control form-control-sm text-end"
+                                               name="l_kart_otrzym "
+                                               class="form-control form-control-sm text-end no-spinner"
                                                value="{{ dane.l_kart_otrzym if dane else 0 }}"
                                                {{ 'readonly' if is_blocked }}>
                                     </td>
@@ -132,21 +134,21 @@
                                     <td class="ps-3">4. Liczba kart niewykorzystanych</td>
                                     <td class="pe-3">
                                         <input type="number"
-                                               name="k4"
-                                               class="form-control form-control-sm text-end"
+                                               name="l_kart_niewyk"
+                                               class="form-control form-control-sm text-end no-spinner"
                                                value="{{ dane.l_kart_niewyk if dane else 0 }}"
                                                {{ 'readonly' if is_blocked }}>
                                     </td>
                                 </tr>
 
                                 <tr>
-                                    <td class="ps-3">5. Liczba wydanych kart (3 - 4)</td>
+                                    <td class="ps-3">5. Liczba wydanych kart do głosowania</td>
                                     <td class="pe-3">
                                         <input type="number"
-                                               name="k5"
-                                               class="form-control form-control-sm text-end"
+                                               name="l_kart_wydan"
+                                               class="form-control form-control-sm text-end no-spinner"
                                                value="{{ dane.l_kart_wydan if dane else 0 }}"
-                                               readonly>
+                                                {{ 'readonly' if is_blocked }}>
                                     </td>
                                 </tr>
 
@@ -154,8 +156,8 @@
                                     <td class="ps-3">6. Liczba kart wyjętych z urny</td>
                                     <td class="pe-3">
                                         <input type="number"
-                                               name="k3"
-                                               class="form-control form-control-sm text-end"
+                                               name="l_kart_wyjet"
+                                               class="form-control form-control-sm text-end no-spinner"
                                                value="{{ dane.l_kart_wyjet if dane else 0 }}"
                                                {{ 'readonly' if is_blocked }}>
                                     </td>
@@ -165,8 +167,8 @@
                                     <td class="ps-5 text-muted">6a. w tym kart nieważnych</td>
                                     <td class="pe-3">
                                         <input type="number"
-                                               name="k4a"
-                                               class="form-control form-control-sm text-end"
+                                               name="l_kart_wyjet_niewaz"
+                                               class="form-control form-control-sm text-end no-spinner"
                                                value="{{ dane.l_kart_wyjet_niewaz if dane else 0 }}"
                                                {{ 'readonly' if is_blocked }}>
                                     </td>
@@ -176,8 +178,8 @@
                                     <td class="ps-5 text-muted">6b. w tym kart ważnych</td>
                                     <td class="pe-3">
                                         <input type="number"
-                                               name="k4b"
-                                               class="form-control form-control-sm text-end"
+                                               name="l_kart_wyjet_waz"
+                                               class="form-control form-control-sm text-end no-spinner"
                                                value="{{ dane.l_kart_wyjet_waz if dane else 0 }}"
                                                {{ 'readonly' if is_blocked }}>
                                     </td>
@@ -187,8 +189,8 @@
                                     <td class="ps-3">7. Liczba głosów nieważnych</td>
                                     <td class="pe-3">
                                         <input type="number"
-                                               name="k6"
-                                               class="form-control form-control-sm text-end"
+                                               name="l_glos_niewaz"
+                                               class="form-control form-control-sm text-end no-spinner"
                                                value="{{ dane.l_glos_niewaz if dane else 0 }}"
                                                {{ 'readonly' if is_blocked }}>
                                     </td>
@@ -198,8 +200,8 @@
                                     <td class="ps-5 text-muted">7a. z powodu znaku "X"</td>
                                     <td class="pe-3">
                                         <input type="number"
-                                               name="k6a"
-                                               class="form-control form-control-sm text-end"
+                                               name="l_glos_niewaz_zlyx"
+                                               class="form-control form-control-sm text-end no-spinner"
                                                value="{{ dane.l_glos_niewaz_zlyx if dane else 0 }}"
                                                {{ 'readonly' if is_blocked }}>
                                     </td>
@@ -209,21 +211,21 @@
                                     <td class="ps-5 text-muted">7b. z innych powodów</td>
                                     <td class="pe-3">
                                         <input type="number"
-                                               name="k6b"
-                                               class="form-control form-control-sm text-end"
+                                               name="l_glos_niewaz_inne"
+                                               class="form-control form-control-sm text-end no-spinner"
                                                value="{{ dane.l_glos_niewaz_inne if dane else 0 }}"
                                                {{ 'readonly' if is_blocked }}>
                                     </td>
                                 </tr>
 
                                 <tr class="table-primary fw-bold">
-                                    <td class="ps-3">8. Liczba głosów ważnych (6b - 7)</td>
+                                    <td class="ps-3">8. Liczba głosów ważnych</td>
                                     <td class="pe-3">
                                         <input type="number"
-                                               name="k8"
-                                               class="form-control form-control-sm text-end"
+                                               name="l_glos_waz"
+                                               class="form-control form-control-sm text-end no-spinner"
                                                value="{{ dane.l_glos_waz if dane else 0 }}"
-                                               readonly>
+                                                {{ 'readonly' if is_blocked }}>
                                     </td>
                                 </tr>
 
@@ -257,7 +259,7 @@
                                     <td class="pe-4">
                                         <input type="number"
                                                name="kandydat_{{ k.id_kandydat }}"
-                                               class="form-control text-end kandydat-input"
+                                               class="form-control text-end kandydat-input no-spinner"
                                                value="{{ glosy_dict.get(k.id_kandydat, 0) }}"
                                                min="0"
                                                {{ 'readonly' if is_blocked }}>

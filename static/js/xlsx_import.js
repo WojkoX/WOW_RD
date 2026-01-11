@@ -6,14 +6,27 @@
    KONFIGURACJA – POLA STAŁE
    =============================== */
 const XLSX_FIELD_MAP = [
+
+  // Czas i zakres (G12, K12 wg Twojego kodu)
   { source: "G12",     target: "glos_od" },
-  { source: "G12:H12", target: "glos_od" },
   { source: "K12",     target: "glos_do" },
-  { source: "K14",     target: "k1" },
-  { source: "K21",     target: "k2" },
-  { source: "K22",     target: "k4" },
-  { source: "K23",     target: "k3" },
-  { source: "K24",     target: "k6" }
+
+  // Dane o kartach (K14 - K24 wg Twojego kodu i standardu)
+  { source: "K14",     target: "l_uprawn" },
+  { source: "K16",     target: "l_kart_otrzym" },
+  { source: "K18",     target: "l_kart_niewyk" }, 
+  { source: "K20",     target: "l_kart_wydan" }, 
+  
+  // Dane z urny
+  { source: "K22",     target: "l_kart_wyjet" },
+  { source: "K23",     target: "l_kart_wyjet_niewaz" },
+  { source: "K24",     target: "l_kart_wyjet_waz" },
+
+  // Wyniki głosowania
+  { source: "K26",     target: "l_glos_niewaz" },
+  { source: "K27",     target: "l_glos_niewaz_zlyx" },
+  { source: "K28",     target: "l_glos_niewaz_inne" },
+  { source: "K30",     target: "l_glos_waz" }
 ];
 
 /* ===============================

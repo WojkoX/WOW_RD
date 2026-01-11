@@ -26,8 +26,18 @@
         
         /* Ukrywanie sidebaru dla widoków pełnoekranowych */
         .sidebar-hidden { display: none !important; }
-
         .btn-status {height: 36px; display: inline-flex; align-items: center; line-height: 1;}
+        
+        /*bez spinerów*/
+        .no-spinner::-webkit-inner-spin-button,
+        .no-spinner::-webkit-outer-spin-button {
+         -webkit-appearance: none;
+                 margin: 0;
+                }
+         .no-spinner {
+             -moz-appearance: textfield;
+                }
+
     </style>
 </head>
 <body>
