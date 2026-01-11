@@ -6,7 +6,8 @@
     <title>{{ config.APP_NAME ~ ' - System Wyborczy' }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/xlsx_import.css') }}">
+ <style>
         body { background-color: #f4f7f6; overflow-x: hidden; }
         #wrapper { display: flex; width: 100%; align-items: stretch; }
         #sidebar-wrapper {
@@ -25,6 +26,8 @@
         
         /* Ukrywanie sidebaru dla widoków pełnoekranowych */
         .sidebar-hidden { display: none !important; }
+
+        .btn-status {height: 36px; display: inline-flex; align-items: center; line-height: 1;}
     </style>
 </head>
 <body>
@@ -97,7 +100,7 @@
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}{% for category, message in messages %}
                     <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm">
-                        {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        {{ message|safe }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}{% endif %}
             {% endwith %}
@@ -106,5 +109,7 @@
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="{{ url_for('static', filename='js/xlsx_import.js') }}"></script>
 </body>
 </html>

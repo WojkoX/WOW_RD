@@ -1,6 +1,8 @@
 import os
 import csv
 import io
+import unicodedata
+import locale
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -18,6 +20,20 @@ db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+def normalize_pl(text: str) -> str:
+    """
+    Usuwa polskie znaki diakrytyczne:
+    Ś → S, Ł → L, Ą → A itd.
+    """
+    if not text:
+        return ""
+    return (
+        unicodedata.normalize("NFKD", text)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+        .upper()
+    )
 
 @login_manager.user_loader
 def load_user(uid):
@@ -224,24 +240,32 @@ def kandydaci_renumeruj():
         flash('Brak uprawnień', 'danger')
         return redirect(url_for('lista_kandydatow'))
 
-    # lista dzielnic
+    # Ustawienie lokalizacji na polską (wymaga zainstalowanego locale pl_PL w systemie)
+    # Jeśli serwer to Windows: "Polish_Poland.1250", jeśli Linux: "pl_PL.UTF-8"
+    try:
+        locale.setlocale(locale.LC_COLLATE, "pl_PL.UTF-8")
+    except:
+        try:
+            locale.setlocale(locale.LC_COLLATE, "Polish_Poland.1250")
+        except:
+            pass # Jeśli locale nie są dostępne, użyjemy metody strxfrm jako fallback
+
     dzielnice = db.session.query(Kandydat.dzielnica).distinct().all()
 
     for (dzielnica,) in dzielnice:
-        # kandydaci w dzielnicy posortowani alfabetycznie
-        kandydaci = (
-            Kandydat.query
-            .filter_by(dzielnica=dzielnica)
-            .order_by(Kandydat.nazwisko, Kandydat.imie)
-            .all()
-        )
+        # 1. Pobieramy wszystkich kandydatów z danej dzielnicy bez order_by w SQL
+        kandydaci = Kandydat.query.filter_by(dzielnica=dzielnica).all()
 
-        # renumeracja LP = 1..N
+        # 2. Sortujemy listę w Pythonie z uwzględnieniem polskich znaków
+        # strxfrm zamienia tekst na postać porównywalną bajtowo zgodnie z wybranym locale
+        kandydaci.sort(key=lambda x: (locale.strxfrm(x.nazwisko), locale.strxfrm(x.imie)))
+
+        # 3. Nadajemy numery LP zgodnie z nową kolejnością
         for lp, k in enumerate(kandydaci, start=1):
             k.lp = lp
 
     db.session.commit()
-    flash('Kandydaci zostali ponumerowani alfabetycznie w każdej dzielnicy', 'success')
+    flash('Kandydaci zostali ponumerowani z uwzględnieniem polskich znaków (Ś, Ż, Ć...)', 'success')
     return redirect(url_for('lista_kandydatow'))
 
 @app.route('/kandydaci/save', methods=['POST'])
@@ -345,70 +369,118 @@ def kandydaci_delete(id):
 @app.route('/kandydaci/import_csv', methods=['POST'])
 @login_required
 def kandydaci_import_csv():
-    if not is_admin(): return redirect(url_for('index'))
-    
+    if not is_admin():
+        flash('Brak uprawnień', 'danger')
+        return redirect(url_for('lista_kandydatow'))
+
     file = request.files.get('csv_file')
-    if not file or not file.filename.endswith('.csv'):
-        flash('Błędny plik CSV', 'danger')
+    if not file or file.filename == '':
+        flash('Nie wybrano pliku CSV', 'warning')
         return redirect(url_for('lista_kandydatow'))
 
     try:
-        # Używamy utf-8-sig, aby automatycznie usunąć znak BOM z Excela
-        stream = io.StringIO(file.stream.read().decode("utf-8-sig"), newline=None)
-        # Używamy średnika jako separatora (zgodnie z Twoim uploadem)
-        reader = csv.DictReader(stream, delimiter=';')
+        stream = io.StringIO(file.stream.read().decode('utf-8'))
+        reader = csv.reader(stream, delimiter=';')
+        rows = list(reader)
+
+        if not rows:
+            raise ValueError('Plik CSV jest pusty')
         
-        kandydaci_do_dodania = []
-        pierwsza_dzielnica = None
+        # --- CSV header-proof ---
+        header = [c.strip().upper() for c in rows[0]]
+        if header[:3] == ['DZIELNICA', 'IMIE', 'NAZWISKO']:
+            rows = rows[1:]
+            if not rows:
+                raise ValueError('Plik CSV zawiera tylko nagłówek')
+    
 
-        for row in reader:
-            # Czyszczenie danych ze spacji i ujednolicenie wielkości liter do porównania
-            obecna_dzielnica = row['DZIELNICA'].strip()
-            
-            if pierwsza_dzielnica is None:
-                pierwsza_dzielnica = obecna_dzielnica
-            
-            # Porównanie ignorujące wielkość liter i spacje
-            if obecna_dzielnica.lower() != pierwsza_dzielnica.lower():
-                flash(f"Błąd: Plik zawiera mieszane dzielnice ({pierwsza_dzielnica} i {obecna_dzielnica})", 'danger')
-                return redirect(url_for('lista_kandydatow'))
-
-            kandydaci_do_dodania.append({
-                'imie': row['IMIE'].strip(),
-                'nazwisko': row['NAZWISKO'].strip(),
-                'dzielnica': obecna_dzielnica
-            })
-
-        if not kandydaci_do_dodania:
-            flash('Plik jest pusty lub ma błędny format', 'warning')
-            return redirect(url_for('lista_kandydatow'))
-
-        # Sprawdzenie czy dzielnica istnieje w bazie (Dla bezpieczeństwa)
-        dz_exists = Dzielnica.query.filter_by(nazwa=pierwsza_dzielnica).first()
-        if not dz_exists:
-            flash(f"Dzielnica '{pierwsza_dzielnica}' nie istnieje w systemie!", 'danger')
-            return redirect(url_for('lista_kandydatow'))
-
-        # Wyznaczenie następnego LP dla tej dzielnicy
-        max_lp = db.session.query(func.max(Kandydat.lp)).filter_by(dzielnica=pierwsza_dzielnica).scalar() or 0
-        
-        for i, k_data in enumerate(kandydaci_do_dodania, start=1):
-            nowy = Kandydat(
-                imie=k_data['imie'],
-                nazwisko=k_data['nazwisko'],
-                dzielnica=k_data['dzielnica'],
-                lp=max_lp + i
+        # [2] jeden import = jedna dzielnica
+        dzielnice_w_pliku = {
+           row[0].strip().lstrip('\ufeff')
+            for row in rows
+             if (
+                row
+                and len(row) >= 3
+                and row[0].strip()
+                and row[0].strip().upper() != 'DZIELNICA'
             )
-            db.session.add(nowy)
-            
+        }
+        if len(dzielnice_w_pliku) != 1:
+            raise ValueError(
+                'Plik CSV musi zawierać kandydatów tylko z jednej dzielnicy'
+            )
+
+        dzielnica = dzielnice_w_pliku.pop()
+
+        # [1] walidacja słownika DZIELNICE
+        istnieje = db.session.execute(
+            text('SELECT 1 FROM DZIELNICE WHERE NAZWA = :n'),
+            {'n': dzielnica}
+        ).fetchone()
+
+        if not istnieje:
+            raise ValueError(
+                f'Dzielnica "{dzielnica}" nie istnieje w słowniku'
+            )
+
+        imported = 0
+        skipped_list = []
+
+        for row_num, row in enumerate(rows, start=1):
+            if len(row) != 3:
+                raise ValueError(f'Błędny format w linii {row_num}')
+
+            _, imie, nazwisko = [x.strip() for x in row]
+
+            if not imie or not nazwisko:
+                raise ValueError(f'Puste dane w linii {row_num}')
+
+            exists = Kandydat.query.filter_by(
+                dzielnica=dzielnica,
+                imie=imie,
+                nazwisko=nazwisko
+            ).first()
+
+            if exists:
+                skipped_list.append(f'{imie} {nazwisko}')
+                continue
+
+            k = Kandydat(
+                dzielnica=dzielnica,
+                imie=imie,
+                nazwisko=nazwisko,
+                lp=0
+            )
+            db.session.add(k)
+            imported += 1
+
         db.session.commit()
-        flash(f'Zaimportowano {len(kandydaci_do_dodania)} kandydatów do dzielnicy {pierwsza_dzielnica}', 'success')
+
+        # renumeracja LP po imporcie
+        kandydaci_renumeruj()
+
+        if skipped_list:
+             lista = "".join(f"<li>{k}</li>" for k in skipped_list)
+             flash(
+                f"""
+                <strong>Pominięto {len(skipped_list)} kandydatów</strong>
+                (już istnieją w dzielnicy {dzielnica}):
+               <ul class="mb-0 mt-2">{lista}</ul>
+               """,
+               "warning"
+             )
+
+        flash(
+            f"Zaimportowano {imported} kandydatów do dzielnicy {dzielnica}",
+            "success"
+        )
 
     except Exception as e:
         db.session.rollback()
         flash(f'Błąd importu CSV: {str(e)}', 'danger')
 
     return redirect(url_for('lista_kandydatow'))
+
 
 
 # Zarządzanie administratorem (Kandydaci/Operatorzy)
